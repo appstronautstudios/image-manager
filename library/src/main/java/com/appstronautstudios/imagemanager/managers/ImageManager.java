@@ -18,7 +18,6 @@ import android.widget.ImageView;
 
 import androidx.core.content.FileProvider;
 
-import com.appstronautstudios.imagemanager.BuildConfig;
 import com.appstronautstudios.imagemanager.utils.SuccessFailListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
@@ -106,7 +105,8 @@ public class ImageManager {
 
         // get content URI of cached image and send share intent with temp read URI permission
         // https://developer.android.com/reference/android/support/v4/content/FileProvider.html#Permissions
-        Uri contentUri = FileProvider.getUriForFile(activity, BuildConfig.LIBRARY_PACKAGE_NAME + ".fileprovider", cacheImage);
+        Uri contentUri = FileProvider.getUriForFile(activity, "com.appstronautstudios.fileprovider", cacheImage);
+        activity.grantUriPermission(activity.getPackageName(), contentUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
         if (contentUri != null) {
             Intent shareIntent = new Intent();
             shareIntent.setAction(Intent.ACTION_SEND);
