@@ -1,0 +1,4 @@
+rootProject.name='ImageManager'
+include ':app'
+include ':app:library'
+include ':library'
