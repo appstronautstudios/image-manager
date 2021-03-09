@@ -1,5 +1,6 @@
 package com.appstronautstudios.imagemanager;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +16,8 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -68,6 +71,35 @@ public class ImageManager {
         view.draw(canvas);
         // return the bitmap
         return returnedBitmap;
+    }
+
+    public void shareImageWithoutPermissions(Activity activity, Bitmap bitmap) {
+        // create file and folder in app specific cache
+        File cacheFolder = new File(activity.getCacheDir(), "images");
+        cacheFolder.mkdirs(); // don't forget to make the directory
+        File cacheImage = new File(cacheFolder, "temp_image.png");
+
+        // write our bitmap to file
+        FileOutputStream fos;
+        try {
+            fos = new FileOutputStream(cacheImage); // overwrites this image every time
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // get content URI of cached image and send share intent with temp read URI permission
+        // https://developer.android.com/reference/android/support/v4/content/FileProvider.html#Permissions
+        Uri contentUri = FileProvider.getUriForFile(activity, BuildConfig.LIBRARY_PACKAGE_NAME + ".fileprovider", cacheImage);
+        if (contentUri != null) {
+            Intent shareIntent = new Intent();
+            shareIntent.setAction(Intent.ACTION_SEND);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
+            shareIntent.setDataAndType(contentUri, activity.getContentResolver().getType(contentUri));
+            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+            activity.startActivity(Intent.createChooser(shareIntent, "Choose an app"));
+        }
     }
 
     /**

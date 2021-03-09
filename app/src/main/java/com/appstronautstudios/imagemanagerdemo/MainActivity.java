@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -30,8 +29,8 @@ public class MainActivity extends AppCompatActivity {
         imageShareBTN.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO
-                Toast.makeText(MainActivity.this, "Not yet implemented", Toast.LENGTH_SHORT).show();
+                Bitmap bmp = ImageManager.getInstance().getBitmapFromImageView(imageView);
+                ImageManager.getInstance().shareImageWithoutPermissions(MainActivity.this, bmp);
             }
         });
         imageSaveBTN.setOnClickListener(new View.OnClickListener() {
