@@ -1,8 +1,8 @@
-package com.appstronautstudios.imagemanager;
+package com.appstronautstudios.imagemanager.managers;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -15,9 +15,17 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.core.content.FileProvider;
+
+import com.appstronautstudios.imagemanager.BuildConfig;
+import com.appstronautstudios.imagemanager.utils.SuccessFailListener;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -73,6 +81,13 @@ public class ImageManager {
         return returnedBitmap;
     }
 
+    /**
+     * writes image to cache and shares with an intent flag permission circumventing requirement to
+     * write to external storage
+     *
+     * @param activity activity
+     * @param bitmap   bitmap to share
+     */
     public void shareImageWithoutPermissions(Activity activity, Bitmap bitmap) {
         // create file and folder in app specific cache
         File cacheFolder = new File(activity.getCacheDir(), "images");
@@ -103,13 +118,75 @@ public class ImageManager {
     }
 
     /**
-     * @param context   context
+     * @param activity  activity
+     * @param bitmap    bitmap to save
+     * @param albumName album name to save to in pictures directory
+     * @param fileName  name of file without extension
+     */
+    public void saveToGallery(final Activity activity, final Bitmap bitmap, final String albumName, final String fileName) {
+        saveToGallery(activity, bitmap, albumName, fileName, null);
+    }
+
+    /**
+     * @param activity  activity
+     * @param bitmap    bitmap to save
+     * @param albumName album name to save to in pictures directory
+     * @param fileName  name of file without extension
+     * @param listener  success/fail listener
+     */
+    public void saveToGallery(final Activity activity, final Bitmap bitmap, final String albumName, final String fileName, final SuccessFailListener listener) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // saving to scoped storage on android 29+ does not require write_external
+            // https://developer.android.com/training/data-storage/shared/media
+            Uri uri = saveToGalleryWithoutPermissionCheck(activity, bitmap, albumName, fileName);
+            if (listener != null) {
+                if (uri != null) {
+                    listener.success(uri);
+                } else {
+                    listener.failure(new Exception("Save failure"));
+                }
+            }
+        } else {
+            Dexter.withContext(activity)
+                    .withPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    .withListener(new PermissionListener() {
+                        @Override
+                        public void onPermissionGranted(PermissionGrantedResponse response) {
+                            Uri uri = saveToGalleryWithoutPermissionCheck(activity, bitmap, albumName, fileName);
+                            if (listener != null) {
+                                if (uri != null) {
+                                    listener.success(uri);
+                                } else {
+                                    listener.failure(new Exception("Save failure"));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onPermissionDenied(PermissionDeniedResponse response) {
+                            if (response.isPermanentlyDenied()) {
+                                if (listener != null) {
+                                    listener.failure(new SecurityException("Permission denied"));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+                            token.continuePermissionRequest();
+                        }
+                    }).check();
+        }
+    }
+
+    /**
+     * @param activity  context
      * @param bitmap    bitmap to save
      * @param albumName album name to save to in pictures directory
      * @param fileName  name of file without extension
      * @return uri of file saved
      */
-    public Uri saveToGallery(Context context, Bitmap bitmap, String albumName, String fileName) {
+    private Uri saveToGalleryWithoutPermissionCheck(final Activity activity, final Bitmap bitmap, final String albumName, final String fileName) {
         // https://proandroiddev.com/working-with-scoped-storage-8a7e7cafea3
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContentValues contentValues = new ContentValues();
@@ -117,10 +194,10 @@ public class ImageManager {
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
             contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/" + albumName);
             Uri collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-            Uri uri = context.getContentResolver().insert(collection, contentValues);
+            Uri uri = activity.getContentResolver().insert(collection, contentValues);
             if (uri != null) {
                 try {
-                    OutputStream out = context.getContentResolver().openOutputStream(uri);
+                    OutputStream out = activity.getContentResolver().openOutputStream(uri);
                     if (out != null) {
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
                         out.close();
@@ -132,27 +209,27 @@ public class ImageManager {
             }
             return null;
         } else {
-            return saveToGalleryLegacy(context, bitmap, albumName, fileName);
+            return saveToGalleryLegacyWithoutPermissionCheck(activity, bitmap, albumName, fileName);
         }
     }
 
     /**
      * WARNING - does not work on android 10+
      *
-     * @param context   context
+     * @param activity  context
      * @param bitmap    bitmap to save
      * @param albumName album name to save to in pictures directory
      * @param fileName  name of file without extension
      * @return uri of file saved
      */
-    public Uri saveToGalleryLegacy(Context context, Bitmap bitmap, String albumName, String fileName) {
+    private Uri saveToGalleryLegacyWithoutPermissionCheck(Activity activity, Bitmap bitmap, String albumName, String fileName) {
         // create image folder if does not exist
         File imagesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), albumName);
         if (!imagesFolder.mkdirs() && !imagesFolder.isDirectory()) {
             String state = Environment.getExternalStorageState();
             if (Environment.MEDIA_MOUNTED.equals(state)) {
                 // failed to create and is not a directory. Something went wrong...
-            } else {
+                return null;
             }
         }
 
@@ -162,6 +239,7 @@ public class ImageManager {
             // image already exists, deleting to start from clean state
             if (!image.delete()) {
                 // failed to delete
+                return null;
             }
         }
 
@@ -169,18 +247,12 @@ public class ImageManager {
         FileOutputStream out = null;
         try {
             out = new FileOutputStream(image);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 50, out);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
             out.flush();
+            out.close();
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            return null;
         }
 
         // get Uri from saved image
@@ -189,10 +261,7 @@ public class ImageManager {
         // media scan the new file so it shows up in the gallery
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         mediaScanIntent.setData(uriSavedImage);
-        context.sendBroadcast(mediaScanIntent);
-
-        // inform the user the image save is complete
-        Toast.makeText(context, "Image Saved", Toast.LENGTH_LONG).show();
+        activity.sendBroadcast(mediaScanIntent);
 
         return uriSavedImage;
     }
