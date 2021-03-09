@@ -106,7 +106,7 @@ public class ImageManager {
 
         // get content URI of cached image and send share intent with temp read URI permission
         // https://developer.android.com/reference/android/support/v4/content/FileProvider.html#Permissions
-        Uri contentUri = FileProvider.getUriForFile(activity, BuildConfig.APPLICATION_ID + ".imagemanager.shareprovider", cacheImage);
+        Uri contentUri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".imagemanager.shareprovider", cacheImage);
         activity.grantUriPermission(activity.getPackageName(), contentUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
         if (contentUri != null) {
             Intent shareIntent = new Intent();
