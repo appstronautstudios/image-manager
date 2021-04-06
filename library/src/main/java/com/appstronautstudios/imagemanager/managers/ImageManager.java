@@ -18,7 +18,6 @@ import android.widget.ImageView;
 
 import androidx.core.content.FileProvider;
 
-import com.appstronautstudios.imagemanager.BuildConfig;
 import com.appstronautstudios.imagemanager.utils.SuccessFailListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;

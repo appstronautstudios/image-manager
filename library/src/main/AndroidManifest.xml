@@ -7,7 +7,7 @@
     <application>
         <!-- for sharing -->
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name=".utils.FileProvider"
             android:authorities="${applicationId}.imagemanager.shareprovider"
             android:exported="false"
             android:grantUriPermissions="true">
