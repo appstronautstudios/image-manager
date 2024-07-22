@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -264,5 +265,56 @@ public class ImageManager {
         activity.sendBroadcast(mediaScanIntent);
 
         return uriSavedImage;
+    }
+
+    public static void stripSensitiveExifData(File file) {
+        try {
+            boolean androidN = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+            ExifInterface exifInterface = new ExifInterface(file.getName());
+            // author
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_ARTIST, null);
+            // location information
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_AREA_INFORMATION, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING_REF, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE_REF, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE_REF, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE, null);
+            if (androidN)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE_REF, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DIFFERENTIAL, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_DOP, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION_REF, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_MAP_DATUM, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_MEASURE_MODE, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_SATELLITES, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_SPEED, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_SPEED_REF, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_STATUS, null);
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_TRACK, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_TRACK_REF, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_GPS_VERSION_ID, null);
+            // device
+            exifInterface.setAttribute(ExifInterface.TAG_MAKE, null);
+            if (androidN) exifInterface.setAttribute(ExifInterface.TAG_MAKER_NOTE, null);
+            exifInterface.setAttribute(ExifInterface.TAG_MODEL, null);
+            exifInterface.setAttribute(ExifInterface.TAG_MAKE, null);
+            exifInterface.saveAttributes();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
