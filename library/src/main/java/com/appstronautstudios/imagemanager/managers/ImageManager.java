@@ -17,6 +17,7 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.content.FileProvider;
 
 import com.appstronautstudios.imagemanager.utils.SuccessFailListener;
@@ -30,10 +31,50 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
 
 public class ImageManager {
 
+    private static final String[] ALL_EXIF_ATTRIBUTES = new String[]{"ImageWidth", "ImageLength",
+            "BitsPerSample", "Compression", "PhotometricInterpretation", "Orientation",
+            "SamplesPerPixel", "PlanarConfiguration", "YCbCrSubSampling", "YCbCrPositioning",
+            "XResolution", "YResolution", "ResolutionUnit", "StripOffsets", "RowsPerStrip",
+            "StripByteCounts", "JPEGInterchangeFormat", "JPEGInterchangeFormatLength",
+            "TransferFunction", "WhitePoint", "PrimaryChromaticities", "YCbCrCoefficients",
+            "ReferenceBlackWhite", "DateTime", "ImageDescription", "Make", "Model", "Software",
+            "Artist", "Copyright", "ExifVersion", "FlashpixVersion", "ColorSpace", "Gamma",
+            "PixelXDimension", "PixelYDimension", "ComponentsConfiguration",
+            "CompressedBitsPerPixel", "MakerNote", "UserComment", "RelatedSoundFile",
+            "DateTimeOriginal", "DateTimeDigitized", "OffsetTime", "OffsetTimeOriginal",
+            "OffsetTimeDigitized", "SubSecTime", "SubSecTimeOriginal", "SubSecTimeDigitized",
+            "ExposureTime", "FNumber", "ExposureProgram", "SpectralSensitivity", "ISOSpeedRatings",
+            "PhotographicSensitivity", "OECF", "SensitivityType", "StandardOutputSensitivity",
+            "RecommendedExposureIndex", "ISOSpeed", "ISOSpeedLatitudeyyy", "ISOSpeedLatitudezzz",
+            "ShutterSpeedValue", "ApertureValue", "BrightnessValue", "ExposureBiasValue",
+            "MaxApertureValue", "SubjectDistance", "MeteringMode", "LightSource", "Flash",
+            "SubjectArea", "FocalLength", "FlashEnergy", "SpatialFrequencyResponse",
+            "FocalPlaneXResolution", "FocalPlaneYResolution", "FocalPlaneResolutionUnit",
+            "SubjectLocation", "ExposureIndex", "SensingMethod", "FileSource", "SceneType",
+            "CFAPattern", "CustomRendered", "ExposureMode", "WhiteBalance", "DigitalZoomRatio",
+            "FocalLengthIn35mmFilm", "SceneCaptureType", "GainControl", "Contrast", "Saturation",
+            "Sharpness", "DeviceSettingDescription", "SubjectDistanceRange", "ImageUniqueID",
+            "CameraOwnerName", "CameraOwnerName", "BodySerialNumber", "LensSpecification",
+            "LensMake", "LensModel", "LensSerialNumber", "GPSVersionID", "GPSLatitudeRef",
+            "GPSLatitude", "GPSLongitudeRef", "GPSLongitude", "GPSAltitudeRef", "GPSAltitude",
+            "GPSTimeStamp", "GPSSatellites", "GPSStatus", "GPSMeasureMode", "GPSDOP",
+            "GPSSpeedRef", "GPSSpeed", "GPSTrackRef", "GPSTrack", "GPSImgDirectionRef",
+            "GPSImgDirection", "GPSMapDatum", "GPSDestLatitudeRef", "GPSDestLatitude",
+            "GPSDestLongitudeRef", "GPSDestLongitude", "GPSDestBearingRef", "GPSDestBearing",
+            "GPSDestDistanceRef", "GPSDestDistance", "GPSProcessingMethod", "GPSAreaInformation",
+            "GPSDateStamp", "GPSDifferential", "GPSHPositioningError", "InteroperabilityIndex",
+            "ThumbnailImageLength", "ThumbnailImageWidth", "ThumbnailOrientation", "DNGVersion",
+            "DefaultCropSize", "ThumbnailImage", "PreviewImageStart", "PreviewImageLength",
+            "AspectFrame", "SensorBottomBorder", "SensorLeftBorder", "SensorRightBorder",
+            "SensorTopBorder", "ISO", "JpgFromRaw", "Xmp", "NewSubfileType", "SubfileType",
+            "ExifIFDPointer", "GPSInfoIFDPointer", "InteroperabilityIFDPointer", "SubIFDPointer",
+            "CameraSettingsIFDPointer", "ImageProcessingIFDPointer"};
     private static final ImageManager INSTANCE = new ImageManager();
 
     private ImageManager() {
@@ -265,6 +306,26 @@ public class ImageManager {
         activity.sendBroadcast(mediaScanIntent);
 
         return uriSavedImage;
+    }
+
+    public static HashMap<String, String> getAllExifData(File file) throws IOException {
+        ExifInterface exifInterface = new ExifInterface(file.getName());
+        return getAllExifData(exifInterface);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public static HashMap<String, String> getAllExifData(InputStream inputStream) throws IOException {
+        ExifInterface exifInterface = new ExifInterface(inputStream);
+        return getAllExifData(exifInterface);
+    }
+
+    public static HashMap<String, String> getAllExifData(ExifInterface exifInterface) throws IOException {
+        HashMap<String, String> data = new HashMap<>();
+        for (String key : ALL_EXIF_ATTRIBUTES) {
+            String valueForKey = exifInterface.getAttribute(key);
+            if (valueForKey != null && !valueForKey.isEmpty()) data.put(key, valueForKey);
+        }
+        return data;
     }
 
     public static void stripSensitiveExifData(File file) {

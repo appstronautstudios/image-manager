@@ -30,12 +30,14 @@
             android:orientation="horizontal">
 
             <Button
+                android:id="@+id/btn_photo"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Take Photo" />
 
             <Button
+                android:id="@+id/btn_exif"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
