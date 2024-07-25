@@ -1,9 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
-group = 'com.github.appstronautstudios'
-version = '0.1.4'
-
 android {
     compileSdkVersion 34
 
@@ -33,6 +30,19 @@ android {
     }
 
     namespace 'com.appstronautstudios.imagemanager'
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.appstronautstudios'
+                artifactId = 'imagemanager'
+                version = '0.1.5'
+            }
+        }
+    }
 }
 
 dependencies {
