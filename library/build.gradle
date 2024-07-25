@@ -1,6 +1,9 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
+group = 'com.github.appstronautstudios'
+version = '0.1.4'
+
 android {
     compileSdkVersion 34
 
@@ -19,9 +22,8 @@ android {
     }
 
     publishing {
-        multipleVariants {
-            allVariants()
-            withJavadocJar()
+        singleVariant("release") {
+            withSourcesJar()
         }
     }
 
